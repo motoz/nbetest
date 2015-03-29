@@ -70,12 +70,12 @@ if __name__ == '__main__':
         response = protocol.Response_frame.from_record(data)
 
         if args.verbose:
-            print 'response:'
+            print 'source ip: %s, source port %s'%(server[0], server[1])
             print 'send:     ' + c.framedata[1:-1]
             print 'received: ' + response.framedata[1:-1]
-            print 'status: ' + response.status
-            print 'function: ' + response.function
-            print 'payload: ' + '\n'.join(response.payload.split(';'))
+            print '   status: ' + response.status
+            print '   function: ' + response.function
+            print '   payload:\n      ' + '\n      '.join(response.payload.split(';'))
         else:
             print '\n'.join(response.payload.split(';'))
 
