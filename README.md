@@ -1,5 +1,6 @@
-#Client
+#client
 
+<pre>
    usage: client.py [-h] [-v] [-a ADDRESS] [-p PASSWORD] function payload
 
    positional arguments:
@@ -12,9 +13,11 @@
      -a ADDRESS, --address ADDRESS
                            controller address, autodiscovered if omitted
      -p PASSWORD, --password PASSWORD
+</pre>
 
 #Server
 
+<pre>
    usage: server.py [-h] [-s] [-H HOST] [-p PASSWORD]
 
    optional arguments:
@@ -22,3 +25,5 @@
      -s, --silent
      -H HOST, --host HOST  default is 0.0.0.0
      -p PASSWORD, --password PASSWORD
+</pre>
+
