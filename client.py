@@ -1,41 +1,10 @@
-import socket
-import sys
 from argparse import ArgumentParser
-import protocol
+from protocol import Proxy
 
 
 PORT = 1900 # Controller port
 PASSWORD = '0123456789'
 
-class Controller:
-    def __init__(self, port=1900, addr=None):
-        self.addr = (addr, port)
-
-    @classmethod
-    def discover(cls):
-        try :
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)        
-            s.settimeout(0.5)
-        except socket.error, msg :
-            print 'Failed to create socket. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
-        try:
-            c = protocol.Request_frame(0, '0'*10, 'NBE Discovery')
-            s.sendto(c.framedata , ('<broadcast>', PORT))
-            data, server = s.recvfrom(4096)
-            response = protocol.Response_frame.from_record(data)
-            if args.verbose:
-                print 'discovery:'
-                print 'send:     ' + c.framedata[1:-1]
-                print 'received: ' + response.framedata[1:-1]
-                print 'status: ' + response.status
-                print 'function: ' + response.function
-                print 'payload: ' + '\n'.join(response.payload.split(';'))
-        except IOError:
-            print 'server discovery failed'
-            sys.exit()
-        return cls(addr=server[0])
 
 if __name__ == '__main__':
 
@@ -48,37 +17,19 @@ if __name__ == '__main__':
 
     args = argparser.parse_args()
 
-    try :
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        s.settimeout(1)
-    except socket.error, msg :
-        print 'Failed to create socket. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
-        sys.exit()
-
     if args.address is None:
-        controller = Controller.discover()
+        proxy = Proxy.discover(PASSWORD)
     else:
-        controller = Controller(PORT, args.address)
+        proxy = Proxy(args.password, PORT, args.address)
 
-    c = protocol.Request_frame(int(args.function), args.password, args.payload)
+    response = proxy.request(args.function, args.payload)
 
-    try:
-        s.sendto(c.framedata , controller.addr)
-        data, server = s.recvfrom(4096)
-        response = protocol.Response_frame.from_record(data)
-
-        if args.verbose:
-            print 'source ip: %s, source port %s'%(server[0], server[1])
-            print 'send:     ' + c.framedata[1:-1]
-            print 'received: ' + response.framedata[1:-1]
-            print '   status: ' + response.status
-            print '   function: ' + response.function
-            print '   payload:\n      ' + '\n      '.join(response.payload.split(';'))
-        else:
-            print '\n'.join(response.payload.split(';'))
-
-    except socket.error, msg :
-        print 'Socket error: ' + str(msg)
+    if args.verbose:
+        print 'IP:', proxy.ip, 'Serial', proxy.serial
+        print 'received: ' + response.framedata[1:-1]
+        print '   status: ' + response.status
+        print '   function: ' + response.function
+        print '   payload:\n      ' + '\n      '.join(response.payload.split(';'))
+    else:
+        print '\n'.join(response.payload.split(';'))
 

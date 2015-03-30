@@ -1,3 +1,5 @@
+import socket
+
 START = '\x02'
 END = '\x04'
 RESPONSE_HEADER_SIZE = 8
@@ -84,4 +86,75 @@ class Response_frame:
     @classmethod
     def from_record(cls, record):
         return cls(None, None, None, record)
+
+def parse_response(frame):
+    d = {}
+    for item in frame.split(';'):
+        name, value = item.split('=')
+        d[name] = value
+    return d
+
+class Proxy:
+    def __init__(self, password, port=1900, addr=None):
+        self.password = password
+        self.addr = (addr, port)
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        s.settimeout(0.5)
+        self.s = s
+        request = Request_frame(0, '0'*10, 'NBE Discovery')
+        self.s.sendto(request.framedata , (addr, port))
+        data, server = self.s.recvfrom(4096)
+        response = parse_response(Response_frame.from_record(data).payload)
+        if 'Serial' in response:
+            self.serial = response['Serial']
+        if 'IP' in response:
+            self.ip = response['IP']
+
+    @classmethod
+    def discover(cls, password):
+        return cls(password, addr='<broadcast>')
+
+    def request(self, function, payload):
+        c = Request_frame(int(function), self.password, payload)
+        self.s.sendto(c.framedata , self.addr)
+        data, server = self.s.recvfrom(4096)
+        return Response_frame.from_record(data)
+    
+    def menu(self, menu):
+        menus = ('boiler', 'hot_water', 'regulation')
+        res = self.request(1, 'boiler.*')
+
+class Controller:
+    def __init__(self, host, password, port=1900):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.s.bind((host, port))
+        self.password = password
+
+    def run(self):
+        while True:
+            d = self.s.recvfrom(1024)
+            data = d[0]
+            addr = d[1]
+            req = Request_frame.from_record(data)
+
+            # discovery response
+            if req.function == 0:
+                res = Response_frame(req.function, 0, 'Serial=1234;IP=%s'%addr[0])
+                self.s.sendto(res.framedata , addr)
+            else:
+                # check password
+                if req.pin == self.password:
+                    if req.function == 1:
+                        res = Response_frame(req.function, 0, 'boiler.temp=90')
+                        self.s.sendto(res.framedata , addr)
+                    else:
+                        res = Response_frame(req.function, 1, 'illegal function')
+                        self.s.sendto(res.framedata , addr)
+                else:
+                    res = Response_frame(req.function, 1, 'wrong password')
+                    self.s.sendto(res.framedata , addr)
+
+
 
