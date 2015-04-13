@@ -25,6 +25,7 @@ if __name__ == '__main__':
     response = proxy.request(args.function, args.payload)
 
     if args.verbose:
+        print 'response from:', proxy.addr
         print 'IP:', proxy.ip, 'Serial', proxy.serial
         print 'received: ' + response.framedata[1:-1]
         print '   status: ' + response.status

@@ -106,6 +106,7 @@ class Proxy:
         request = Request_frame(0, '0'*10, 'NBE Discovery')
         self.s.sendto(request.framedata , (addr, port))
         data, server = self.s.recvfrom(4096)
+        self.addr = server
         response = parse_response(Response_frame.from_record(data).payload)
         if 'Serial' in response:
             self.serial = response['Serial']
