@@ -2,10 +2,10 @@ import socket
 
 START = '\x02'
 END = '\x04'
-RESPONSE_HEADER_SIZE = 8
-REQUEST_HEADER_SIZE = 17
+RESPONSE_HEADER_SIZE = 10
+REQUEST_HEADER_SIZE = 19
 STATUS_CODES = (0,1,2,3)
-FUNCTION_CODES = (0,1,2,3,4,5,6,7,10)
+FUNCTION_CODES = (0,1,2,3,4,5,6,7,8,9,10,11)
 
 
 class Request_frame:
@@ -17,6 +17,7 @@ class Request_frame:
             self.framedata += '%02u'%function
             if len(pin) > 10:
                 raise IOError
+            self.framedata += '%02d'%0
             self.framedata += '%10s'%pin
             if len(payload) > 495:
                 raise IOError
@@ -31,6 +32,8 @@ class Request_frame:
                 raise IOError
             i += 1
             self.function = int(record[i:i+2])
+            i += 2
+            self.seqnum = int(record[i:i+2])
             i += 2
             self.pin = record[i:i+10]
             i += 10
@@ -56,6 +59,7 @@ class Response_frame:
             self.framedata += '%02u'%function
             if not status in STATUS_CODES:
                 raise IOError
+            self.framedata += '%2s'%'1'
             self.framedata += '%1s'%status
             if len(payload) > 1007:
                 raise IOError
@@ -71,6 +75,8 @@ class Response_frame:
                 raise IOError
             i += 1
             self.function = record[i:i+2]
+            i += 2
+            self.seqnum = record[i:i+2]
             i += 2
             self.status = record[i:i+1]
             i += 1
@@ -119,6 +125,7 @@ class Proxy:
 
     def request(self, function, payload):
         c = Request_frame(int(function), self.password, payload)
+        #print ' '.join([str(ord(ch)) for ch in c.framedata])
         self.s.sendto(c.framedata , self.addr)
         data, server = self.s.recvfrom(4096)
         return Response_frame.from_record(data)
