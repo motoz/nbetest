@@ -18,7 +18,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     if args.address is None:
-        proxy = Proxy.discover(PASSWORD)
+        proxy = Proxy.discover(args.password)
     else:
         proxy = Proxy(args.password, PORT, args.address)
 

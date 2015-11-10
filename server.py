@@ -14,5 +14,5 @@ if __name__ == '__main__':
 
     password = '%10s'%args.password[:10]
 
-    controller = Controller(args.host, args.password, PORT)
+    controller = Controller(args.host, password, PORT)
     controller.run()
