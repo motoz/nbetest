@@ -30,6 +30,9 @@ function  command
    10       Read available programs
    11       Read barbeque data
 
+examples:
+   read all boiler settings, function: 1 payload: boiler.*
+   write setting, function: 2 payload: boiler.diff_over=5
 </pre>
 
 ##Server
