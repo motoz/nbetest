@@ -1,7 +1,7 @@
 #NBE V13 test program
-A client that can connect to a scotte V13, and a server that simulates a V13 controller box.
+A client that can connect to a scotte V13, and a test server that simulates a V13 controller box.
 
-##client
+##Client
 
 <pre>
    usage: client.py [-h] [-v] [-a ADDRESS] [-p PASSWORD] function payload
