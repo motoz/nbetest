@@ -1,4 +1,5 @@
 import socket
+from random import randrange
 
 START = '\x02'
 END = '\x04'
@@ -9,7 +10,7 @@ FUNCTION_CODES = (0,1,2,3,4,5,6,7,8,9,10,11)
 
 
 class Request_frame:
-    def __init__(self, function, pin, payload, record=None):
+    def __init__(self, function, pin, payload, record=None, sequence_number = 0):
         if record is None:
             self.framedata = START;
             if function not in FUNCTION_CODES:
@@ -17,7 +18,7 @@ class Request_frame:
             self.framedata += '%02u'%function
             if len(pin) > 10:
                 raise IOError
-            self.framedata += '%02d'%0
+            self.framedata += '%02d'%sequence_number
             self.framedata += '%10s'%pin
             if len(payload) > 495:
                 raise IOError
@@ -51,7 +52,7 @@ class Request_frame:
         return cls(None, None, None, record)
 
 class Response_frame:
-    def __init__(self, function, status, payload, record=None):
+    def __init__(self, function, status, payload, record=None, sequence_number=0):
         if record is None:
             self.framedata = START;
             if int(function) > 7:
@@ -59,7 +60,7 @@ class Response_frame:
             self.framedata += '%02u'%function
             if not status in STATUS_CODES:
                 raise IOError
-            self.framedata += '%2s'%'1'
+            self.framedata += '%2d'%sequence_number
             self.framedata += '%1s'%status
             if len(payload) > 1007:
                 raise IOError
@@ -76,7 +77,7 @@ class Response_frame:
             i += 1
             self.function = record[i:i+2]
             i += 2
-            self.seqnum = record[i:i+2]
+            self.seqnum = int(record[i:i+2])
             i += 2
             self.status = record[i:i+1]
             i += 1
@@ -104,12 +105,13 @@ class Proxy:
     def __init__(self, password, port=1900, addr=None):
         self.password = password
         self.addr = (addr, port)
+        self.sequence_number = randrange(0,100)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         s.settimeout(0.5)
         self.s = s
-        request = Request_frame(0, '0'*10, 'NBE Discovery')
+        request = Request_frame(0, '0'*10, 'NBE Discovery', sequence_number=self.sequence_number)
         self.s.sendto(request.framedata , (addr, port))
         data, server = self.s.recvfrom(4096)
         self.addr = server
@@ -124,11 +126,17 @@ class Proxy:
         return cls(password, addr='<broadcast>')
 
     def request(self, function, payload):
-        c = Request_frame(int(function), self.password, payload)
+        self.sequence_number = (self.sequence_number + 1) % 100
+        c = Request_frame(int(function), self.password, payload, sequence_number = self.sequence_number)
         #print ' '.join([str(ord(ch)) for ch in c.framedata])
         self.s.sendto(c.framedata , self.addr)
         data, server = self.s.recvfrom(4096)
-        return Response_frame.from_record(data)
+        response = Response_frame.from_record(data)
+        #print self.sequence_number, response.seqnum
+        if response.seqnum == self.sequence_number:
+            return response
+        else:
+            raise IOError
     
     def menu(self, menu):
         menus = ('boiler', 'hot_water', 'regulation')
@@ -149,19 +157,19 @@ class Controller:
 
             # discovery response
             if req.function == 0:
-                res = Response_frame(req.function, 0, 'Serial=1234;IP=%s'%addr[0])
+                res = Response_frame(req.function, 0, 'Serial=1234;IP=%s'%addr[0], sequence_number=req.seqnum)
                 self.s.sendto(res.framedata , addr)
             else:
                 # check password
                 if req.pin == self.password:
                     if req.function == 1:
-                        res = Response_frame(req.function, 0, 'boiler.temp=90')
+                        res = Response_frame(req.function, 0, 'boiler.temp=90', sequence_number=req.seqnum)
                         self.s.sendto(res.framedata , addr)
                     else:
-                        res = Response_frame(req.function, 1, 'illegal function')
+                        res = Response_frame(req.function, 1, 'illegal function', sequence_number=req.seqnum)
                         self.s.sendto(res.framedata , addr)
                 else:
-                    res = Response_frame(req.function, 1, 'wrong password')
+                    res = Response_frame(req.function, 1, 'wrong password', sequence_number=req.seqnum)
                     self.s.sendto(res.framedata , addr)
 
 
