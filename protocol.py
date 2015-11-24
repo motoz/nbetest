@@ -1,8 +1,8 @@
 import socket
 from random import randrange
 
-START = '\x02'
-END = '\x04'
+START = b'\x02'
+END = b'\x04'
 RESPONSE_HEADER_SIZE = 10
 REQUEST_HEADER_SIZE = 19
 STATUS_CODES = (0,1,2,3)
@@ -15,19 +15,19 @@ class Request_frame:
             self.framedata = START;
             if function not in FUNCTION_CODES:
                 raise IOError
-            self.framedata += '%02u'%function
+            self.framedata += ('%02u'%function).encode('ascii')
             if len(pin) > 10:
                 raise IOError
-            self.framedata += '%02d'%sequence_number
-            self.framedata += '%10s'%pin
+            self.framedata += ('%02d'%sequence_number).encode('ascii')
+            self.framedata += ('%10s'%pin).encode('ascii')
             if len(payload) > 495:
                 raise IOError
-            self.framedata += '%03u'%len(payload)
-            self.framedata += payload
+            self.framedata += ('%03u'%len(payload)).encode('ascii')
+            self.framedata += payload.encode('ascii')
             self.framedata += END;
         else:
             i = 0
-            if not record[i] == START:
+            if not record[i] == START[0]:
                 raise IOError
             if len(record) < 17:
                 raise IOError
@@ -36,7 +36,7 @@ class Request_frame:
             i += 2
             self.seqnum = int(record[i:i+2])
             i += 2
-            self.pin = record[i:i+10]
+            self.pin = record[i:i+10].decode('ascii')
             i += 10
             self.size = int(record[i:i+3])
             i += 3
@@ -44,7 +44,7 @@ class Request_frame:
                 raise IOError
             self.payload = record[i:i+self.size]
             i += self.size
-            if not record[i] == END:
+            if not record[i] == END[0]:
                 raise IOError
     
     @classmethod
@@ -57,37 +57,37 @@ class Response_frame:
             self.framedata = START;
             if int(function) > 7:
                 raise IOError
-            self.framedata += '%02u'%function
+            self.framedata += ('%02u'%function).encode('ascii')
             if not status in STATUS_CODES:
                 raise IOError
-            self.framedata += '%2d'%sequence_number
-            self.framedata += '%1s'%status
+            self.framedata += ('%2d'%sequence_number).encode('ascii')
+            self.framedata += ('%1s'%status).encode('ascii')
             if len(payload) > 1007:
                 raise IOError
-            self.framedata += '%03u'%len(payload)
-            self.framedata += payload
+            self.framedata += ('%03u'%len(payload)).encode('ascii')
+            self.framedata += payload.encode('ascii')
             self.framedata += END;
         else:
             self.framedata = record
             i = 0
-            if not record[i] == START:
+            if not record[i] == START[0]:
                 raise IOError
             if len(record) < RESPONSE_HEADER_SIZE:
                 raise IOError
             i += 1
-            self.function = record[i:i+2]
+            self.function = int(record[i:i+2])
             i += 2
             self.seqnum = int(record[i:i+2])
             i += 2
-            self.status = record[i:i+1]
+            self.status = int(record[i:i+1])
             i += 1
             self.size = int(record[i:i+3])
             i += 3
             if not len(record) == self.size + RESPONSE_HEADER_SIZE:
                 raise IOError
-            self.payload = record[i:i+self.size]
+            self.payload = (record[i:i+self.size]).decode('ascii')
             i += self.size
-            if not record[i] == END:
+            if not record[i] == END[0]:
                 raise IOError
 
     @classmethod
