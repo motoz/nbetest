@@ -1,5 +1,5 @@
-#NBE V13 test program
-A client that can connect to a scotte V13, and a test server that simulates a V13 controller box.
+#Test program for the NBE pelletburner UDP protocol
+A client that can connect to a scotte V7/V13 controller, and a test server that simulates a controller box.
 
 ##Client
 
