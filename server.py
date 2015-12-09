@@ -9,10 +9,11 @@ if __name__ == '__main__':
     argparser = ArgumentParser()
     argparser.add_argument('-H', '--host', default=HOST, help='default is %s'%HOST)
     argparser.add_argument('-p', '--password', default=PASSWORD)
+    argparser.add_argument('-n', '--noseqnum', action='store_true')
 
     args = argparser.parse_args()
 
     password = '%10s'%args.password[:10]
 
-    controller = Controller(args.host, password, PORT)
+    controller = Controller(args.host, password, PORT, not args.noseqnum)
     controller.run()

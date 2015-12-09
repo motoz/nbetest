@@ -12,15 +12,16 @@ if __name__ == '__main__':
     argparser.add_argument('-v', '--verbose', action='store_true')
     argparser.add_argument('-a', '--address', default=None, help='controller address, autodiscovered if omitted')
     argparser.add_argument('-p', '--password', default=PASSWORD)
+    argparser.add_argument('-n', '--noseqnum', action='store_true')
     argparser.add_argument('function')
     argparser.add_argument('payload')
 
     args = argparser.parse_args()
 
     if args.address is None:
-        proxy = Proxy.discover(args.password)
+        proxy = Proxy.discover(args.password, PORT, seqnums = not args.noseqnum)
     else:
-        proxy = Proxy(args.password, PORT, args.address)
+        proxy = Proxy(args.password, PORT, args.address, not args.noseqnum)
 
     response = proxy.request(args.function, args.payload)
 
