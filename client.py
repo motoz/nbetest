@@ -12,9 +12,9 @@ if __name__ == '__main__':
     argparser.add_argument('-v', '--verbose', action='store_true')
     argparser.add_argument('-a', '--address', default=None, help='controller address, autodiscovered if omitted')
     argparser.add_argument('-p', '--password', default=PASSWORD)
-    argparser.add_argument('-n', '--noseqnum', action='store_true')
-    argparser.add_argument('function')
-    argparser.add_argument('payload')
+    argparser.add_argument('-n', '--noseqnum', action='store_true', help = 'use with firmware older than 7.0614')
+    argparser.add_argument('function', help = '1..11')
+    argparser.add_argument('payload', help = 'depends on function')
 
     args = argparser.parse_args()
 

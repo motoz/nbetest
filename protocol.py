@@ -162,8 +162,7 @@ class Proxy:
             return response
 
     def menu(self, menu):
-        menus = ('boiler', 'hot_water', 'regulation')
-        res = self.request(1, 'boiler.*')
+        menus = ('boiler', 'hot_water', 'regulation', 'weather', 'oxygen', 'cleaning', 'hopper', 'fan', 'auger', 'ignition', 'pump', 'sun', 'vacuum', 'misc', 'alarm', 'manual', 'bbq_smoke', 'bbq_rotation', 'bbq_grill', 'bbq_meat', 'bbq_afterburner', 'bbq_div')
 
 class Controller:
     def __init__(self, host, password, port=1900, seqnums=True):
