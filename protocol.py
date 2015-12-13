@@ -164,7 +164,7 @@ class Proxy:
     def get(self, d=None):
         d = d.rstrip('/').split('/')
         if d[0] is None or d[0] is '*':
-            return self.root
+            return [p + '/' for p in self.root]
         elif d[0] == 'settings':
             if len(d) == 1:
                 return ['settings/' + s for s in self.settings]
@@ -181,13 +181,13 @@ class Proxy:
             else:
                 return []
         elif d[0] in ('operating_data', 'advanced_data'):
-            if d == 'operation_data':
+            if d[0] == 'operating_data':
                 f = 4
             else:
                 f = 5
             if len(d) == 1:
                 response = self.request(f, '*')
-                return response.payload.split(';')
+                return [d[0] + '/' + s for s in response.payload.split(';')]
             elif len(d) == 2:
                 response = self.request(f, d[1])
                 try:
@@ -196,10 +196,10 @@ class Proxy:
                     return (response.payload,)
         elif d[0] == 'consumption_data':
             if len(d) == 1:
-                return self.consumption_data
+                return [d[0] + '/' + s for s in self.consumption_data]
             elif d[1] in self.consumption_data:
                 response = self.request(6, d[1])
-                return response.payload.split(';')
+                return [d[0] + '/' + s for s in response.payload.split(';')]
             else:
                 return []
         elif d[0] == 'event_log':
