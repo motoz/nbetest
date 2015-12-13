@@ -1,12 +1,13 @@
 import socket
 from random import randrange
+import time
 
 START = b'\x02'
 END = b'\x04'
 RESPONSE_HEADER_SIZE = 10
 REQUEST_HEADER_SIZE = 19
 STATUS_CODES = (0,1,2,3)
-FUNCTION_CODES = (0,1,2,3,4,5,6,7,8,9,10,11)
+FUNCTION_CODES = (0,1,2,3,4,5,6,7,8,9,10)
 
 
 class Request_frame:
@@ -30,6 +31,7 @@ class Request_frame:
             self.framedata += ('%03u'%len(payload)).encode('ascii')
             self.framedata += payload.encode('ascii')
             self.framedata += END;
+            #print(self.framedata)
         else:
             i = 0
             if not record[i] == START[0]:
@@ -82,6 +84,7 @@ class Response_frame:
             self.framedata += END;
         else:
             self.framedata = record
+            #print (record)
             i = 0
             if not record[i] == START[0]:
                 raise IOError
@@ -117,7 +120,23 @@ def parse_response(frame):
         d[name] = value
     return d
 
+class directory(object):
+    def read(self):
+        pass
+    def write(self):
+        pass
+
+class settings(directory):
+    function = 1
+    writefunction = 2
+
+
 class Proxy:
+    root = ('settings', 'operating_data', 'advanced_data', 'consumption_data', 'event_log')
+    settings = ('boiler', 'hot_water', 'regulation', 'weather', 'oxygen', 'cleaning', 'hopper', 'fan', 'auger', 'ignition', 'pump', 
+        'sun', 'vacuum', 'misc', 'alarm', 'manual', 'bbq_smoke', 'bbq_rotation', 'bbq_grill', 'bbq_meat', 'bbq_afterburner', 'bbq_div')
+    consumption_data = ('total_hours', 'total_days', 'total_months', 'total_years', 'dhw_hours', 'dhw_days', 'dhw_months', 'dhw_years')
+
     def __init__(self, password, port=1900, addr=None, seqnums = True):
         self.password = password
         self.addr = (addr, port)
@@ -127,18 +146,83 @@ class Proxy:
             self.sequence_number = None
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        if addr == '<broadcast>':
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         s.settimeout(0.5)
         self.s = s
         request = Request_frame(0, '0'*10, 'NBE Discovery', sequence_number=self.sequence_number)
         self.s.sendto(request.framedata , (addr, port))
         data, server = self.s.recvfrom(4096)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
         self.addr = server
         response = parse_response(Response_frame.from_record(data, sequence_number=self.sequence_number).payload)
         if 'Serial' in response:
             self.serial = response['Serial']
         if 'IP' in response:
             self.ip = response['IP']
+
+    def get(self, d=None):
+        d = d.rstrip('/').split('/')
+        if d[0] is None or d[0] is '*':
+            return self.root
+        elif d[0] == 'settings':
+            if len(d) == 1:
+                return ['settings/' + s for s in self.settings]
+            elif d[1] in self.settings:
+                if len(d) == 2:
+                    response = self.request(1, d[1] + '.*')
+                    return ['settings/' + d[1] + '/' + s for s in response.payload.split(';')]
+                else:
+                    response = self.request(1, d[1] + '.' + d[2])
+                    try:
+                        return (response.payload.split('=')[1],)
+                    except IndexError:
+                        return (response.payload,)
+            else:
+                return []
+        elif d[0] in ('operating_data', 'advanced_data'):
+            if d == 'operation_data':
+                f = 4
+            else:
+                f = 5
+            if len(d) == 1:
+                response = self.request(f, '*')
+                return response.payload.split(';')
+            elif len(d) == 2:
+                response = self.request(f, d[1])
+                try:
+                    return (response.payload.split('=')[1],)
+                except IndexError:
+                    return (response.payload,)
+        elif d[0] == 'consumption_data':
+            if len(d) == 1:
+                return self.consumption_data
+            elif d[1] in self.consumption_data:
+                response = self.request(6, d[1])
+                return response.payload.split(';')
+            else:
+                return []
+        elif d[0] == 'event_log':
+            if len(d) == 1:
+                now = time.strftime('%y%m%d:%H%M%S;',time.localtime())
+                response = self.request(8, now)
+                return response.payload.split(';')
+            else:
+                response = self.request(8, d[1])
+                return response.payload.split(';')
+
+    def set(self, path=None, value=None):
+        d = path.rstrip('/').split('/')
+        if d[0] is None or d[0] is '*':
+            return ('settings',)
+        elif len(d) == 3 and d[1] in self.settings and value is not None :
+            response = self.request(2, '.'.join(d[1:3]) + '=' + value)
+            if response.status == 0:
+                return ('OK',)
+            else:
+                return (response.payload,)
+        else:
+            return self.get(path)
 
     @classmethod
     def discover(cls, password, port, seqnums = True):
@@ -148,7 +232,7 @@ class Proxy:
         if self.sequence_number is not None:
             self.sequence_number = (self.sequence_number + 1) % 100
         c = Request_frame(int(function), self.password, payload, sequence_number = self.sequence_number)
-        #print ' '.join([str(ord(ch)) for ch in c.framedata])
+        #print(' '.join([str(ord(ch)) for ch in c.framedata.decode('ascii')]))
         self.s.sendto(c.framedata , self.addr)
         data, server = self.s.recvfrom(4096)
         response = Response_frame.from_record(data, self.sequence_number)
@@ -160,9 +244,6 @@ class Proxy:
                 raise IOError
         else:
             return response
-
-    def menu(self, menu):
-        menus = ('boiler', 'hot_water', 'regulation', 'weather', 'oxygen', 'cleaning', 'hopper', 'fan', 'auger', 'ignition', 'pump', 'sun', 'vacuum', 'misc', 'alarm', 'manual', 'bbq_smoke', 'bbq_rotation', 'bbq_grill', 'bbq_meat', 'bbq_afterburner', 'bbq_div')
 
 class Controller:
     def __init__(self, host, password, port=1900, seqnums=True):
