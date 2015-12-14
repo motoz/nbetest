@@ -167,11 +167,11 @@ class Proxy:
             return [p + '/' for p in self.root]
         elif d[0] == 'settings':
             if len(d) == 1:
-                return ['settings/' + s for s in self.settings]
+                return ['settings/%s/'%s for s in self.settings]
             elif d[1] in self.settings:
                 if len(d) == 2:
                     response = self.request(1, d[1] + '.*')
-                    return ['settings/' + d[1] + '/' + s for s in response.payload.split(';')]
+                    return ['settings/%s/%s'%(d[1], s) for s in response.payload.split(';')]
                 else:
                     response = self.request(1, d[1] + '.' + d[2])
                     try:
