@@ -7,7 +7,7 @@ END = b'\x04'
 RESPONSE_HEADER_SIZE = 10
 REQUEST_HEADER_SIZE = 19
 STATUS_CODES = (0,1,2,3)
-FUNCTION_CODES = (0,1,2,3,4,5,6,7,8,9,10)
+FUNCTION_CODES = (0,1,2,3,4,5,6,7,8,9,10,11)
 
 
 class Request_frame:
@@ -113,26 +113,17 @@ class Response_frame:
     def from_record(cls, record, sequence_number=0):
         return cls(None, None, None, record, sequence_number)
 
-def parse_response(frame):
-    d = {}
-    for item in frame.split(';'):
-        name, value = item.split('=')
-        d[name] = value
-    return d
-
-class directory(object):
-    def read(self):
-        pass
-    def write(self):
-        pass
-
-class settings(directory):
-    function = 1
-    writefunction = 2
+    def parse_payload(self):
+        frame = self.payload
+        d = {}
+        for item in frame.split(';'):
+            name, value = item.split('=')
+            d[name] = value
+        return d
 
 
 class Proxy:
-    root = ('settings', 'operating_data', 'advanced_data', 'consumption_data', 'event_log')
+    root = ('settings', 'operating_data', 'advanced_data', 'consumption_data', 'event_log','sw_versions','info')
     settings = ('boiler', 'hot_water', 'regulation', 'weather', 'oxygen', 'cleaning', 'hopper', 'fan', 'auger', 'ignition', 'pump', 
         'sun', 'vacuum', 'misc', 'alarm', 'manual', 'bbq_smoke', 'bbq_rotation', 'bbq_grill', 'bbq_meat', 'bbq_afterburner', 'bbq_div')
     consumption_data = ('total_hours', 'total_days', 'total_months', 'total_years', 'dhw_hours', 'dhw_days', 'dhw_months', 'dhw_years')
@@ -155,7 +146,7 @@ class Proxy:
         data, server = self.s.recvfrom(4096)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
         self.addr = server
-        response = parse_response(Response_frame.from_record(data, sequence_number=self.sequence_number).payload)
+        response = Response_frame.from_record(data, sequence_number=self.sequence_number).parse_payload()
         if 'Serial' in response:
             self.serial = response['Serial']
         if 'IP' in response:
@@ -200,6 +191,18 @@ class Proxy:
             elif d[1] in self.consumption_data:
                 response = self.request(6, d[1])
                 return [d[0] + '/' + s for s in response.payload.split(';')]
+            else:
+                return []
+        elif d[0] == 'sw_versions':
+            if len(d) == 1:
+                response = self.request(10, '')
+                return [s for s in response.payload.split(';')]
+            else:
+                return []
+        elif d[0] == 'info':
+            if len(d) == 1:
+                response = self.request(9, '')
+                return [s for s in response.payload.split(';')]
             else:
                 return []
         elif d[0] == 'event_log':
