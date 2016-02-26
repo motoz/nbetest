@@ -6,7 +6,6 @@ from protocol import Proxy
 PORT = 1900 # Controller port
 PASSWORD = '0123456789'
 
-
 def getfunc(args, proxy):
     l = proxy.get(args.path)
     print('\n'.join(l))

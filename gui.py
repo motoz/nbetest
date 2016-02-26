@@ -104,6 +104,7 @@ class simpleapp_tk(Tkinter.Tk):
             else:
                 path = '*'
                 value = None
+            self.proxy.password = self.passwordVariable.get()
             self.text.insert(Tkinter.END, '\n'.join(self.proxy.set(path, value))+'\n\n')
         self.text.see(Tkinter.END)
         self.entry.focus_set()
