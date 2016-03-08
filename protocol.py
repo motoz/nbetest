@@ -1,147 +1,35 @@
+#! /usr/bin/python
+# -*- coding: utf-8 -*-
+"""
+    Copyright (C) 2013  Anders Nylund
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 import socket
 from random import randrange
 import time
 from Crypto.PublicKey import RSA
+from collections import namedtuple
+from v3frames import V3_request_frame, V3_response_frame
+from v2frames import V2_request_frame, V2_response_frame
 
-START = b'\x02'
-END = b'\x04'
-RESPONSE_HEADER_SIZE = 28
-REQUEST_HEADER_SIZE = 52
-STATUS_CODES = (0,1,2,3)
-FUNCTION_CODES = (0,1,2,3,4,5,6,7,8,9,10,11)
+#V1_RESPONSE_HEADER_SIZE = 8
+#V1_REQUEST_HEADER_SIZE = 17
 
-class Request_frame:
-    def __init__(self, function, pin, payload, record=None, sequence_number=0, encrypt=False, key=None):
-        if sequence_number is not None:
-            self.REQUEST_HEADER_SIZE = REQUEST_HEADER_SIZE
-        else:
-            self.REQUEST_HEADER_SIZE = REQUEST_HEADER_SIZE -2
-        if record is None:
-            self.framedata = ('%12s'%'nbetest').encode('ascii')
-            self.framedata += ('%6s'%'id').encode('ascii')
-
-            if encrypt:
-                self.framedata += ('%1s'%'*').encode('ascii')
-            else:
-                self.framedata += ('%1s'%' ').encode('ascii')
-
-            h = START;
-            if function not in FUNCTION_CODES:
-                raise IOError
-            h += ('%02u'%function).encode('ascii')
-            if len(pin) > 10:
-                raise IOError
-            if sequence_number is not None:
-                h += ('%02d'%sequence_number).encode('ascii')
-
-            if encrypt:
-                h += ('%10s'%pin).encode('ascii')
-            else:
-                h += ('%10s'%'-').encode('ascii')
-            h += ('%10s'%int(time.time())).encode('ascii')
-            h += ('%4s'%'extr').encode('ascii')
-            h += ('%03u'%len(payload)).encode('ascii')
-            if len(payload) > 495:
-                raise IOError
-            h += payload.encode('ascii')
-            h += END;
-            pad = '0'*(64-len(h))
-            h+=pad
-            if encrypt: 
-                h = key.encrypt(h, None)[0]
-            self.framedata += h
-        else:
-            i = 0
-            if not record[i] == START[0]:
-                raise IOError
-            if len(record) < 17:
-                raise IOError
-            i += 1
-            self.function = int(record[i:i+2])
-            i += 2
-            if sequence_number is not None:
-                self.seqnum = int(record[i:i+2])
-                i += 2
-            else:
-                self.seqnum = None
-            self.pin = record[i:i+10].decode('ascii')
-            i += 10
-            self.size = int(record[i:i+3])
-            i += 3
-            if not len(record) == self.size + self.REQUEST_HEADER_SIZE:
-                raise IOError
-            self.payload = record[i:i+self.size]
-            i += self.size
-            if not record[i] == END[0]:
-                raise IOError
-    
-    @classmethod
-    def from_record(cls, record, sequence_number):
-        return cls(None, None, None, record, sequence_number)
-
-class Response_frame:
-    def __init__(self, function, status, payload, record=None, sequence_number=0):
-        if sequence_number is not None:
-            self.RESPONSE_HEADER_SIZE = RESPONSE_HEADER_SIZE
-        else:
-            self.RESPONSE_HEADER_SIZE = RESPONSE_HEADER_SIZE -2
-        if record is None:
-            self.framedata = START;
-            if int(function) > 7:
-                raise IOError
-            self.framedata += ('%02u'%function).encode('ascii')
-            if not status in STATUS_CODES:
-                raise IOError
-            if sequence_number is not None:
-                self.framedata += ('%2d'%sequence_number).encode('ascii')
-            self.framedata += ('%1s'%status).encode('ascii')
-            if len(payload) > 1007:
-                raise IOError
-            self.framedata += ('%03u'%len(payload)).encode('ascii')
-            self.framedata += payload.encode('ascii')
-            self.framedata += END;
-        else:
-            self.framedata = record
-            i = 0
-            self.appid = unicode(record[i:i+12])
-            i+=12
-            self.controllerid = unicode(record[i:i+6])
-            i+=6
-            if not record[i] == START[0]:
-                raise IOError
-            if len(record) < self.RESPONSE_HEADER_SIZE:
-                raise IOError
-            i += 1
-            self.function = int(record[i:i+2])
-            i += 2
-            if sequence_number is not None:
-                self.seqnum = int(record[i:i+2])
-                i += 2
-            else:
-                self.seqnum = None
-            self.status = int(record[i:i+1])
-            i += 1
-            self.size = int(record[i:i+3])
-            i += 3
-            if not len(record) == self.size + self.RESPONSE_HEADER_SIZE:
-                raise IOError
-            self.payload = (record[i:i+self.size]).decode('ascii')
-            i += self.size
-            if not record[i] == END[0]:
-                raise IOError
-
-    @classmethod
-    def from_record(cls, record, sequence_number=0):
-        return cls(None, None, None, record, sequence_number)
-
-    def parse_payload(self):
-        frame = self.payload
-        d = {}
-        for item in frame.split(';'):
-            name, value = item.split('=')
-            d[name] = value
-        return d
-
+#V2_RESPONSE_HEADER_SIZE = 10
+#V2_REQUEST_HEADER_SIZE = 19
 
 class Proxy:
     root = ('settings', 'operating_data', 'advanced_data', 'consumption_data', 'event_log','sw_versions','info')
@@ -149,43 +37,54 @@ class Proxy:
         'sun', 'vacuum', 'misc', 'alarm', 'manual', 'bbq_smoke', 'bbq_rotation', 'bbq_grill', 'bbq_meat', 'bbq_afterburner', 'bbq_div')
     consumption_data = ('total_hours', 'total_days', 'total_months', 'total_years', 'dhw_hours', 'dhw_days', 'dhw_months', 'dhw_years')
 
-    def __init__(self, password, port=1900, addr=None, seqnums = True):
+    def __init__(self, password, port=1900, addr=None, version='V3'):
         self.password = password
         self.addr = (addr, port)
-        if seqnums:
-            self.sequence_number = randrange(0,100)
-        else:
-            self.sequence_number = None
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if addr == '<broadcast>':
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         s.settimeout(5)
         self.s = s
-        request = Request_frame(0, '0'*10, 'NBE Discovery', sequence_number=self.sequence_number)
-        self.s.sendto(request.framedata , (addr, port))
+        if version == '3':
+            request = V3_request_frame()
+            self.response = V3_response_frame(request)
+        elif version == '2':
+            request = V2_request_frame()
+            self.response = V2_response_frame(request)
+        elif version == '1':
+            request = V1_request_frame()
+            self.response = V1_response_frame(request)
+
+        request.function = 0
+        request.payload = 'NBE_DISCOVERY'
+        request.sequencenumber = randrange(0,100)
+        self.s.sendto(request.encode() , (addr, port))
         data, server = self.s.recvfrom(4096)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
         self.addr = server
-        self.sequence_number += 1
 
-        response = Response_frame.from_record(data, sequence_number=self.sequence_number).parse_payload()
-        if 'Serial' in response:
-            self.serial = response['Serial']
-        if 'IP' in response:
-            self.ip = response['IP']
+        self.response.decode(data)
+        res = self.response.parse_payload()
+        if 'Serial' in res:
+            self.serial = res['Serial']
+        if 'IP' in res:
+            self.ip = res['IP']
 
-        request = Request_frame(1, '0'*10, 'misc.rsa_key', sequence_number=self.sequence_number)
-        self.s.sendto(request.framedata , self.addr)
+        request.payload = 'misc.rsa_key'
+        request.function = 1
+        request.sequencenumber += 1
+        self.s.sendto(request.encode() , self.addr)
         data, server = self.s.recvfrom(4096)
-        response = Response_frame.from_record(data, sequence_number=self.sequence_number)
+        self.response.decode(data)
         try:
-            key = response.payload.split('rsa_key=')[1]
+            key = self.response.payload.split('rsa_key=')[1]
             key = key.decode('base_64')
-            self.public_key = RSA.importKey(key)
-        except:
-            self.public_key = None
-
+            request.public_key = RSA.importKey(key)
+        except Exception as e:
+            request.public_key = None
+        request.pincode = password
+        self.request = request
 
     def get(self, d=None):
         d = d.rstrip('/').split('/')
@@ -196,10 +95,10 @@ class Proxy:
                 return ['settings/%s/'%s for s in self.settings]
             elif d[1] in self.settings:
                 if len(d) == 2:
-                    response = self.request(1, d[1] + '.*')
+                    response = self.make_request(1, d[1] + '.*')
                     return ['settings/%s/%s'%(d[1], s) for s in response.payload.split(';')]
                 else:
-                    response = self.request(1, d[1] + '.' + d[2])
+                    response = self.make_request(1, d[1] + '.' + d[2])
                     try:
                         return (response.payload.split('=', 1)[1],)
                     except IndexError:
@@ -212,10 +111,10 @@ class Proxy:
             else:
                 f = 5
             if len(d) == 1:
-                response = self.request(f, '*')
+                response = self.make_request(f, '*')
                 return [d[0] + '/' + s for s in response.payload.split(';')]
             elif len(d) == 2:
-                response = self.request(f, d[1])
+                response = self.make_request(f, d[1])
                 try:
                     return (response.payload.split('=')[1],)
                 except IndexError:
@@ -224,29 +123,29 @@ class Proxy:
             if len(d) == 1:
                 return [d[0] + '/' + s for s in self.consumption_data]
             elif d[1] in self.consumption_data:
-                response = self.request(6, d[1])
+                response = self.make_request(6, d[1])
                 return [d[0] + '/' + s for s in response.payload.split(';')]
             else:
                 return []
         elif d[0] == 'sw_versions':
             if len(d) == 1:
-                response = self.request(10, '')
+                response = self.make_request(10, '')
                 return [s for s in response.payload.split(';')]
             else:
                 return []
         elif d[0] == 'info':
             if len(d) == 1:
-                response = self.request(9, '')
+                response = self.make_request(9, '')
                 return [s for s in response.payload.split(';')]
             else:
                 return []
         elif d[0] == 'event_log':
             if len(d) == 1:
                 now = time.strftime('%y%m%d:%H%M%S;',time.localtime())
-                response = self.request(8, now)
+                response = self.make_request(8, now)
                 return response.payload.split(';')
             else:
-                response = self.request(8, d[1])
+                response = self.make_request(8, d[1])
                 return response.payload.split(';')
 
     def set(self, path=None, value=None):
@@ -254,7 +153,7 @@ class Proxy:
         if d[0] is None or d[0] is '*':
             return ('settings',)
         elif len(d) == 3 and d[1] in self.settings and value is not None :
-            response = self.request(2, '.'.join(d[1:3]) + '=' + value, encrypt=True)
+            response = self.make_request(2, '.'.join(d[1:3]) + '=' + value, encrypt=True)
             if response.status == 0:
                 return ('OK',)
             else:
@@ -263,30 +162,28 @@ class Proxy:
             return self.get(path)
 
     @classmethod
-    def discover(cls, password, port, seqnums = True):
-        return cls(password, port, addr='<broadcast>', seqnums=seqnums)
+    def discover(cls, password, port, version='V1'):
+        return cls(password, port, addr='<broadcast>', version=version)
 
-    def request(self, function, payload, encrypt=False, key=None):
-        if self.sequence_number is not None:
-            self.sequence_number = (self.sequence_number + 1) % 100
-        c = Request_frame(int(function), self.password, payload, sequence_number = self.sequence_number, encrypt=encrypt, key=self.public_key)
+    def make_request(self, function, payload, encrypt=False, key=None):
         #print(' '.join([hex(ord(ch)) for ch in c.framedata]))
-        self.s.sendto(c.framedata , self.addr)
+        self.request.sequencenumber += 1
+        self.request.payload = payload
+        self.request.function = function
+        self.request.encrypted = encrypt
+        self.s.sendto(self.request.encode(), self.addr)
         data, server = self.s.recvfrom(4096)
-        response = Response_frame.from_record(data, self.sequence_number)
-        if self.sequence_number is not None:
-            if response.seqnum == self.sequence_number:
-                return response
-            else:
-                raise IOError
-        else:
-            return response
+        self.response.decode(data)
+        return self.response
 
 class Controller:
     def __init__(self, host, password, port=1900, seqnums=True):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.s.bind((host, port))
         self.password = password
+        self.request = V3_request_frame()
+        self.response = V3_response_frame(self.request)
+
         if seqnums:
             self.seqnums = 0
         else:
@@ -297,27 +194,43 @@ class Controller:
             d = self.s.recvfrom(1024)
             data = d[0]
             addr = d[1]
-            req = Request_frame.from_record(data, sequence_number = self.seqnums)
-            print ('< ' + req.payload.decode('ascii'))
+            self.request.decode(data)
+            print ('< ' + self.request.payload.decode('ascii'))
             # discovery response
-            if req.function == 0:
-                res = Response_frame(req.function, 0, 'Serial=1234;IP=%s'%addr[0], sequence_number=req.seqnum)
-                self.s.sendto(res.framedata , addr)
-                print ('  > ' + res.framedata.decode('ascii'))
+            if self.request.function == 0:
+                self.response.function = self.request.function
+                self.response.payload = 'Serial=1234;IP=%s'%addr[0]
+                self.response.status = 0
+                frame = self.response.encode()
+                self.s.sendto(frame , addr)
+                print ('  > ' + frame.decode('ascii'))
             else:
                 # check password
-                if req.pin == self.password:
-                    if req.function == 1:
-                        res = Response_frame(req.function, 0, 'boiler.temp=90', sequence_number=req.seqnum)
-                        self.s.sendto(res.framedata , addr)
+                if True: #self.requset.pincode == self.password:
+                    if self.request.function == 1:
+                        self.response.function = self.request.function
+                        if self.request.payload == 'boiler.temp':
+                            self.response.payload = 'boiler.temp=90'
+                            self.response.status = 0
+                        elif self.request.payload == 'misc.rsa_key':
+                            self.response.payload = 'casyugdyasguyagusduaysgdaysudyasgdyuasdgua'
+                            self.response.status = 0
+                        frame = self.response.encode()
+                        self.s.sendto(frame , addr)
                     else:
-                        res = Response_frame(req.function, 1, 'illegal function', sequence_number=req.seqnum)
-                        self.s.sendto(res.framedata , addr)
-                    print ('  > ' + res.framedata.decode('ascii'))
+                        self.response.function = self.request.function
+                        self.response.payload = 'illegal function'
+                        self.response.status = 1
+                        frame = self.response.encode()
+                        self.s.sendto(frame , addr)
+                    print ('  > ' + frame.decode('ascii'))
                 else:
-                    res = Response_frame(req.function, 1, 'wrong password', sequence_number=req.seqnum)
-                    self.s.sendto(res.framedata , addr)
-                    print ('  > ' + res.framedata.decode('ascii'))
+                    self.response.function = self.request.function
+                    self.response.payload = 'wrong password'
+                    self.response.status = 1
+                    frame = self.response.encode()
+                    self.s.sendto(frame , addr)
+                    print ('  > ' + frame.decode('ascii'))
 
 
 
