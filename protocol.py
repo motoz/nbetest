@@ -24,12 +24,7 @@ from Crypto.PublicKey import RSA
 import base64
 from v3frames import V3_request_frame, V3_response_frame
 from v2frames import V2_request_frame, V2_response_frame
-
-#V1_RESPONSE_HEADER_SIZE = 8
-#V1_REQUEST_HEADER_SIZE = 17
-
-#V2_RESPONSE_HEADER_SIZE = 10
-#V2_REQUEST_HEADER_SIZE = 19
+from v1frames import V1_request_frame, V1_response_frame
 
 class Proxy:
     root = ('settings', 'operating_data', 'advanced_data', 'consumption_data', 'event_log','sw_versions','info')
@@ -84,7 +79,7 @@ class Proxy:
         except Exception as e:
             print (e)
             request.public_key = None
-        request.pincode = password
+        request.pincode = self.password
         self.request = request
 
     def get(self, d=None):
@@ -174,6 +169,7 @@ class Proxy:
         self.request.payload = payload
         self.request.function = function
         self.request.encrypted = encrypt
+        self.request.pincode = self.password
         self.s.sendto(self.request.encode(), self.addr)
         data, server = self.s.recvfrom(4096)
         self.response.decode(data)
