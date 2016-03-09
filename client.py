@@ -32,7 +32,7 @@ def setfunc(args, proxy):
     print('\n'.join(l))
 
 def rawfunc(args, proxy):
-    response = proxy.request(args.function, args.payload)
+    response = proxy.make_request(int(args.function), args.payload)
     if args.verbose:
         print('response from:', proxy.addr)
         print('IP:', proxy.ip, 'Serial', proxy.serial)

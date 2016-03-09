@@ -21,7 +21,7 @@ import socket
 from random import randrange
 import time
 from Crypto.PublicKey import RSA
-from collections import namedtuple
+import base64
 from v3frames import V3_request_frame, V3_response_frame
 from v2frames import V2_request_frame, V2_response_frame
 
@@ -79,9 +79,10 @@ class Proxy:
         self.response.decode(data)
         try:
             key = self.response.payload.split('rsa_key=')[1]
-            key = key.decode('base_64')
+            key = base64.b64decode(key)
             request.public_key = RSA.importKey(key)
         except Exception as e:
+            print (e)
             request.public_key = None
         request.pincode = password
         self.request = request

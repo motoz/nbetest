@@ -62,7 +62,7 @@ class V3_request_frame(object):
             raise IOError
         h += self.payload.encode('ascii')
         h += END;
-        pad = '0'*(64-len(h))
+        pad = b'0'*(64-len(h))
         h+=pad
         if self.encrypted: 
             h = self.public_key.encrypt(h, None)[0]
@@ -127,9 +127,9 @@ class V3_response_frame(object):
     def decode(self, record):
         self.framedata = record
         i = 0
-        self.appid = unicode(record[i:i+12])
+        self.appid = record[i:i+12]
         i+=12
-        self.controllerid = unicode(record[i:i+6])
+        self.controllerid = record[i:i+6]
         i+=6
         if not record[i] == START[0]:
             raise IOError
