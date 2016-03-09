@@ -16,25 +16,26 @@ class simpleapp_tk(Tkinter.Tk):
     def __init__(self,parent):
         Tkinter.Tk.__init__(self,parent)
         self.parent = parent
-        self.seqnums = Tkinter.IntVar()
-        self.seqnums.set(1)
+        self.proxy = None
         self.addressVariable = Tkinter.StringVar()
         self.passwordVariable = Tkinter.StringVar()
         self.serialVariable = Tkinter.StringVar()
         self.serialVariable.set('sdf')
-        self.get_proxy()
         self.initialize()
+        self.get_proxy()
 
     def get_proxy(self, event=None):
         try:
             pw = self.passwordVariable.get()
             address = self.addressVariable.get()
+            version = str(self.versionselection.get())
             if  address in ('<discover>', ''):
-                self.proxy = Proxy.discover(pw, PORT, self.seqnums.get())
+                self.proxy = Proxy.discover(pw, PORT, version=version)
             else:
-                self.proxy = Proxy(pw, PORT, address, self.seqnums.get())
+                self.proxy = Proxy(pw, PORT, address, version=version)
             self.serialVariable.set(self.proxy.serial)
-        except:
+        except Exception as e:
+            #print e
             self.serialVariable.set('-')
 
     def initialize(self):
@@ -55,7 +56,7 @@ class simpleapp_tk(Tkinter.Tk):
 
         self.entryVariable = Tkinter.StringVar()
         self.entry = Tkinter.Entry(self,textvariable=self.entryVariable)
-        self.entry.grid(column=0,row=1,sticky='ENSW', columnspan=4)
+        self.entry.grid(column=0,row=1,sticky='ENSW', columnspan=3)
         self.entry.bind("<Return>", self.OnPressEnter)
         self.entryVariable.set(u"get")
 
@@ -64,13 +65,21 @@ class simpleapp_tk(Tkinter.Tk):
 
 
         button = Tkinter.Button(self, text=u"Run command", command=self.OnButtonClick)
-        button.grid(column=5, row=1)
+        button.grid(column=3, row=1, sticky = 'W')
 
-        self.secnumbutton = Tkinter.Checkbutton(self, text="seqnums", variable=self.seqnums, command=self.OnSecnumClick)
-        self.secnumbutton.grid(column=4, row=1, sticky='E')
+        #self.secnumbutton = Tkinter.Checkbutton(self, text="seqnums", variable=self.seqnums, command=self.OnSecnumClick)
+        #self.secnumbutton.grid(column=4, row=1, sticky='E')
+
+
+        self.versionselection = Tkinter.IntVar()
+        self.versionselection.set(2)
+        Tkinter.Label(self, text='version:').grid(row = 1, column = 4    , sticky = 'E')
+        v1 = Tkinter.Radiobutton(text="V1", variable=self.versionselection, value=1, command=self.get_proxy).grid(column=5, row=1, sticky='W')
+        v2 = Tkinter.Radiobutton(text="V2", variable=self.versionselection, value=2, command=self.get_proxy).grid(column=6, row=1, sticky='W')
+        v3 = Tkinter.Radiobutton(text="V3", variable=self.versionselection, value=3, command=self.get_proxy).grid(column=7  , row=1, sticky='W')
 
         self.text = Tkinter.Text(self)
-        self.text.grid(column=0, row=2, columnspan=6, sticky='EWNS')
+        self.text.grid(column=0, row=2, columnspan=8, sticky='EWNS')
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=5)
@@ -109,9 +118,6 @@ class simpleapp_tk(Tkinter.Tk):
         self.text.see(Tkinter.END)
         self.entry.focus_set()
         self.entry.selection_range(0, Tkinter.END)
-
-    def OnSecnumClick(self):
-        self.get_proxy()
 
 if __name__ == "__main__":
     app = simpleapp_tk(None)

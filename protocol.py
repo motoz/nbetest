@@ -44,7 +44,7 @@ class Proxy:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if addr == '<broadcast>':
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        s.settimeout(5)
+        s.settimeout(0.5)
         self.s = s
         if version == '3':
             request = V3_request_frame()
@@ -154,7 +154,9 @@ class Proxy:
         if d[0] is None or d[0] is '*':
             return ('settings',)
         elif len(d) == 3 and d[1] in self.settings and value is not None :
+            self.s.settimeout(5)
             response = self.make_request(2, '.'.join(d[1:3]) + '=' + value, encrypt=True)
+            self.s.settimeout(0.5)
             if response.status == 0:
                 return ('OK',)
             else:
