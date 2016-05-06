@@ -18,17 +18,18 @@
 """
 
 import time
+import random
 
 START = b'\x02'
 END = b'\x04'
 STATUS_CODES = (0,1,2,3)
 FUNCTION_CODES = (0,1,2,3,4,5,6,7,8,9,10,11)
 
-class V3_request_frame(object):
+class Request_frame(object):
     def __init__(self, version = 'V1'):
         self.REQUEST_HEADER_SIZE = 52
-        self.appid = 'nbetest'
-        self.controllerid = 'id'
+        self.appid = ''.join([random.choice('abcdefghijk') for a in range(10)])
+        self.controllerid = ''.join([random.choice('abcdefghijk') for a in range(10)])
         self.encrypted = False
         self.sequencenumber = 0
         self.pincode = '0123456789'
@@ -41,7 +42,11 @@ class V3_request_frame(object):
         self.framedata += ('%6s'%self.controllerid[:6]).encode('ascii')
 
         if self.encrypted:
-            self.framedata += ('%1s'%'*').encode('ascii')
+            if hasattr(self, 'xtea_key'):
+                #print ('xtea encrypt 1')
+                self.framedata += ('%1s'%'-').encode('ascii')
+            else:
+                self.framedata += ('%1s'%'*').encode('ascii')
         else:
             self.framedata += ('%1s'%' ').encode('ascii')
 
@@ -60,12 +65,19 @@ class V3_request_frame(object):
         h += ('%03u'%len(self.payload)).encode('ascii')
         if len(self.payload) > 495:
             raise IOError
-        h += self.payload.encode('ascii')
+        try:
+            h += self.payload.encode('ascii')
+        except UnicodeError:
+            h += self.payload
         h += END;
         pad = b'0'*(64-len(h))
         h+=pad
         if self.encrypted: 
-            h = self.public_key.encrypt(h, None)[0]
+            if hasattr(self, 'xtea_key'):
+                #print ('xtea encrypt 2')
+                h = self.xtea_key.encrypt(h)
+            else:
+                h = self.public_key.encrypt(h, None)[0]
         self.framedata += h
         return self.framedata
 
@@ -101,7 +113,7 @@ class V3_request_frame(object):
         if not record[i] == END[0]:
             raise IOError
 
-class V3_response_frame(object):
+class Response_frame(object):
     def __init__(self, request):
         self.RESPONSE_HEADER_SIZE = 28
         self.request = request
@@ -149,6 +161,7 @@ class V3_response_frame(object):
         i += 3
         if not len(record) == self.size + self.RESPONSE_HEADER_SIZE:
             raise IOError
+        #print record[i:i+self.size]
         self.payload = (record[i:i+self.size]).decode('ascii')
         #print self.payload
         i += self.size

@@ -22,17 +22,18 @@ from random import randrange
 import time
 from Crypto.PublicKey import RSA
 import base64
-from v3frames import V3_request_frame, V3_response_frame
-from v2frames import V2_request_frame, V2_response_frame
-from v1frames import V1_request_frame, V1_response_frame
+from frames import Request_frame, Response_frame
+from os import urandom
+from random import SystemRandom, randrange
+#import xtea
 
 class Proxy:
     root = ('settings', 'operating_data', 'advanced_data', 'consumption_data', 'event_log','sw_versions','info')
-    settings = ('boiler', 'hot_water', 'regulation', 'weather', 'oxygen', 'cleaning', 'hopper', 'fan', 'auger', 'ignition', 'pump', 
-        'sun', 'vacuum', 'misc', 'alarm', 'manual', 'bbq_smoke', 'bbq_rotation', 'bbq_grill', 'bbq_meat', 'bbq_afterburner', 'bbq_div')
-    consumption_data = ('total_hours', 'total_days', 'total_months', 'total_years', 'dhw_hours', 'dhw_days', 'dhw_months', 'dhw_years')
+    settings = ('boiler', 'hot_water', 'regulation', 'weather', 'weather2', 'oxygen', 'cleaning', 'hopper', 'fan', 'auger', 'ignition', 'pump', 
+        'sun', 'vacuum', 'misc', 'alarm', 'manual')
+    consumption_data = ('total_hours', 'total_days', 'total_months', 'total_years', 'dhw_hours', 'dhw_days', 'dhw_months', 'dhw_years', 'counter')
 
-    def __init__(self, password, port=1900, addr=None, version='V3'):
+    def __init__(self, password, port=8483, addr=None):
         self.password = password
         self.addr = (addr, port)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -41,15 +42,8 @@ class Proxy:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         s.settimeout(0.5)
         self.s = s
-        if version == '3':
-            request = V3_request_frame()
-            self.response = V3_response_frame(request)
-        elif version == '2':
-            request = V2_request_frame()
-            self.response = V2_response_frame(request)
-        elif version == '1':
-            request = V1_request_frame()
-            self.response = V1_response_frame(request)
+        request = Request_frame()
+        self.response = Response_frame(request)
 
         request.function = 0
         request.payload = 'NBE_DISCOVERY'
@@ -76,11 +70,16 @@ class Proxy:
             key = self.response.payload.split('rsa_key=')[1]
             key = base64.b64decode(key)
             request.public_key = RSA.importKey(key)
-        except Exception as e:
-            print (e)
+        except IOError: #Exception as e:
             request.public_key = None
         request.pincode = self.password
-        self.request = request
+
+        #xtea_key = base64.b64encode(urandom(10))
+        #xtea_key = ''.join([chr(SystemRandom().randrange(128)) for x in range(16)])
+        self.request = request        
+        #self.set('settings/misc/xtea_key', xtea_key)
+        #self.request.xtea_key = xtea.new(xtea_key, mode=xtea.MODE_ECB, IV='\00'*8, rounds=64, endian='!')
+
 
     def get(self, d=None):
         d = d.rstrip('/').split('/')
@@ -151,7 +150,7 @@ class Proxy:
         elif len(d) == 3 and d[1] in self.settings and value is not None :
             self.s.settimeout(5)
             response = self.make_request(2, '.'.join(d[1:3]) + '=' + value, encrypt=True)
-            self.s.settimeout(0.5)
+            self.s.settimeout(1.3)
             if response.status == 0:
                 return ('OK',)
             else:
@@ -160,8 +159,8 @@ class Proxy:
             return self.get(path)
 
     @classmethod
-    def discover(cls, password, port, version='V1'):
-        return cls(password, port, addr='<broadcast>', version=version)
+    def discover(cls, password, port):
+        return cls(password, port, addr='<broadcast>')
 
     def make_request(self, function, payload, encrypt=False, key=None):
         #print(' '.join([hex(ord(ch)) for ch in c.framedata]))

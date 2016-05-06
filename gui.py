@@ -8,7 +8,7 @@ except ImportError:
 
 from protocol import Proxy
 
-PORT = 1900 # Controller port
+PORT = 8483 # Controller port
 PASSWORD = '0123456789'
 
 
@@ -28,11 +28,10 @@ class simpleapp_tk(Tkinter.Tk):
         try:
             pw = self.passwordVariable.get()
             address = self.addressVariable.get()
-            version = str(self.versionselection.get())
             if  address in ('<discover>', ''):
-                self.proxy = Proxy.discover(pw, PORT, version=version)
+                self.proxy = Proxy.discover(pw, PORT)
             else:
-                self.proxy = Proxy(pw, PORT, address, version=version)
+                self.proxy = Proxy(pw, PORT, address,)
             self.serialVariable.set(self.proxy.serial)
         except Exception as e:
             #print e
@@ -69,14 +68,6 @@ class simpleapp_tk(Tkinter.Tk):
 
         #self.secnumbutton = Tkinter.Checkbutton(self, text="seqnums", variable=self.seqnums, command=self.OnSecnumClick)
         #self.secnumbutton.grid(column=4, row=1, sticky='E')
-
-
-        self.versionselection = Tkinter.IntVar()
-        self.versionselection.set(2)
-        Tkinter.Label(self, text='version:').grid(row = 1, column = 4    , sticky = 'E')
-        v1 = Tkinter.Radiobutton(text="V1", variable=self.versionselection, value=1, command=self.get_proxy).grid(column=5, row=1, sticky='W')
-        v2 = Tkinter.Radiobutton(text="V2", variable=self.versionselection, value=2, command=self.get_proxy).grid(column=6, row=1, sticky='W')
-        v3 = Tkinter.Radiobutton(text="V3", variable=self.versionselection, value=3, command=self.get_proxy).grid(column=7  , row=1, sticky='W')
 
         self.text = Tkinter.Text(self)
         self.text.grid(column=0, row=2, columnspan=8, sticky='EWNS')

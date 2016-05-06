@@ -20,7 +20,7 @@ from __future__ import print_function
 from argparse import ArgumentParser
 from protocol import Proxy
 
-PORT = 1900 # Controller port
+PORT = 8483 # Controller port
 PASSWORD = '0123456789'
 
 def getfunc(args, proxy):
@@ -50,7 +50,6 @@ if __name__ == '__main__':
     argparser.add_argument('-v', '--verbose', action='store_true')
     argparser.add_argument('-a', '--address', default=None, help='controller address, autodiscovered if omitted')
     argparser.add_argument('-p', '--password', default=PASSWORD)
-    argparser.add_argument('-V', '--version', default='2', help='protocol version= 1,2,3...')
 
     subparsers = argparser.add_subparsers(help='sub-command help')
 
@@ -74,9 +73,9 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     if args.address is None:
-        proxy = Proxy.discover(args.password, PORT, version=args.version)
+        proxy = Proxy.discover(args.password, PORT)
     else:
-        proxy = Proxy(args.password, PORT, args.address, version=args.version)
+        proxy = Proxy(args.password, PORT, args.address)
 
     args.func(args, proxy)
 
