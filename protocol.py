@@ -47,7 +47,8 @@ class Proxy:
 
         request.function = 0
         request.payload = 'NBE_DISCOVERY'
-        request.controllerid = serialnumber
+        if serialnumber:
+            request.controllerid = serialnumber
         request.sequencenumber = randrange(0,100)
         self.s.sendto(request.encode() , (addr, port))
         data, server = self.s.recvfrom(4096)
