@@ -33,7 +33,7 @@ class Proxy:
         'sun', 'vacuum', 'misc', 'alarm', 'manual')
     consumption_data = ('total_hours', 'total_days', 'total_months', 'total_years', 'dhw_hours', 'dhw_days', 'dhw_months', 'dhw_years', 'counter')
 
-    def __init__(self, password, port=8483, addr=None):
+    def __init__(self, password, port=8483, addr=None, serialnumber=None):
         self.password = password
         self.addr = (addr, port)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -47,6 +47,7 @@ class Proxy:
 
         request.function = 0
         request.payload = 'NBE_DISCOVERY'
+        request.controllerid = serialnumber
         request.sequencenumber = randrange(0,100)
         self.s.sendto(request.encode() , (addr, port))
         data, server = self.s.recvfrom(4096)
