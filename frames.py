@@ -42,7 +42,7 @@ class Request_frame(object):
         while True:
             success = True
             self.framedata = ('%12s'%self.appid[:12]).encode('ascii')
-            self.framedata += ('%6s'%self.controllerid[:6]).encode('ascii')
+            self.framedata += ('%06d'%int(self.controllerid[:6])).encode('ascii')
 
             if self.encrypted:
                 if hasattr(self, 'xtea_key'):
