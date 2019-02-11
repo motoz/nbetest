@@ -35,9 +35,14 @@ class Proxy:
 
     def __init__(self, password, port=8483, addr=None, serialnumber=None):
         self.password = password
-        #self.addr = (addr, port)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.bind(('', port))
+        for p in range(port+1, 9999):
+            try:
+                s.bind(('', p))
+                break
+            except socket.error:
+                if p==9999:
+                    print 'No free port found'
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if addr == '<broadcast>':
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -47,7 +52,7 @@ class Proxy:
         self.response = Response_frame(request)
 
         request.function = 0
-        request.payload = 'NBE_DISCOVERY'
+        request.payload = 'NBE Discovery'
         if serialnumber:
             request.controllerid = serialnumber
         request.sequencenumber = randrange(0,100)
@@ -76,13 +81,7 @@ class Proxy:
         except IOError: #Exception as e:
             request.public_key = None
         request.pincode = self.password
-
-        #xtea_key = base64.b64encode(urandom(10))
-        #xtea_key = ''.join([chr(SystemRandom().randrange(128)) for x in range(16)])
-        self.request = request        
-        #self.set('settings/misc/xtea_key', xtea_key)
-        #self.request.xtea_key = xtea.new(xtea_key, mode=xtea.MODE_ECB, IV='\00'*8, rounds=64, endian='!')
-
+        self.request = request
 
     def get(self, d=None):
         d = d.rstrip('/').split('/')
@@ -162,8 +161,8 @@ class Proxy:
             return self.get(path)
 
     @classmethod
-    def discover(cls, password, port):
-        return cls(password, port, addr='<broadcast>')
+    def discover(cls, password, port, serialnumber):
+        return cls(password, port, addr='<broadcast>', serialnumber=serialnumber)
 
     def make_request(self, function, payload, encrypt=False, key=None):
         #print(' '.join([hex(ord(ch)) for ch in c.framedata]))
@@ -176,6 +175,12 @@ class Proxy:
         data, server = self.s.recvfrom(4096)
         self.response.decode(data)
         return self.response
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, password, port=8483, addr=None, serialnumber=None):
+        self.s.close()
 
 class Controller:
     def __init__(self, host, password, port=1900, seqnums=True):

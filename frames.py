@@ -27,12 +27,12 @@ STATUS_CODES = (0,1,2,3)
 FUNCTION_CODES = (0,1,2,3,4,5,6,7,8,9,10,11)
 
 class Request_frame(object):
-    def __init__(self, version = 'V1'):
+    def __init__(self):
         self.REQUEST_HEADER_SIZE = 52
         self.appid = ''.join([random.choice('abcdefghijk') for a in range(10)])
         self.controllerid = ''.join([random.choice('abcdefghijk') for a in range(10)])
         self.encrypted = False
-        self.sequencenumber = 0
+        self.sequencenumber = 1
         self.pincode = '0123456789'
         self.payload = ''
         self.payloadsize = len(self.payload)
@@ -62,9 +62,10 @@ class Request_frame(object):
             if self.encrypted:
                 h += ('%10s'%self.pincode[:10]).encode('ascii')
             else:
-                h += ('%10s'%'-').encode('ascii')
+                h += '0000000000'.encode('ascii')
+
             h += ('%10s'%int(time.time())).encode('ascii')
-            h += ('%4s'%'extr').encode('ascii')
+            h += ('%4s'%'pad ').encode('ascii')
             h += ('%03u'%len(self.payload)).encode('ascii')
             if len(self.payload) > 495:
                 raise IOError

@@ -50,7 +50,7 @@ if __name__ == '__main__':
     argparser.add_argument('-v', '--verbose', action='store_true')
     argparser.add_argument('-a', '--address', default=None, help='controller address, autodiscovered if omitted')
     argparser.add_argument('-p', '--password', default=PASSWORD)
-    argparser.add_argument('-s', '--serial')
+    argparser.add_argument('-s', '--serial', default='000000')
 
     subparsers = argparser.add_subparsers(help='sub-command help')
 
@@ -74,11 +74,12 @@ if __name__ == '__main__':
     args = argparser.parse_args()
 
     if args.address is None:
-        proxy = Proxy.discover(args.password, PORT)
+        with Proxy.discover(args.password, PORT, args.serial) as proxy:
+            args.func(args, proxy)
     else:
-        proxy = Proxy(args.password, PORT, args.address, args.serial)
+        with Proxy(args.password, PORT, args.address, args.serial) as proxy:
+            args.func(args, proxy)
 
-    args.func(args, proxy)
 
 
 
