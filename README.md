@@ -21,10 +21,11 @@ A client that can connect to a scotte V7/V13 controller (and apparently also adu
       -a ADDRESS, --address ADDRESS
                             controller address, autodiscovered if omitted
       -p PASSWORD, --password PASSWORD
+      -s SERIAL, --serial SERIAL
 
 examples:
 
-python client.py -V 3 get
+python client.py get
 settings/
 operating_data/
 advanced_data/
@@ -33,7 +34,7 @@ event_log/
 sw_versions/
 info/
 
-python client.py -V 3 get settings
+python client.py get settings
 settings/boiler/
 settings/hot_water/
 settings/regulation/
@@ -57,32 +58,19 @@ settings/bbq_meat/
 settings/bbq_afterburner/
 settings/bbq_div/
 
-python client.py -V 3 get settings/boiler/temp
+python client.py -s 765432 -get settings/boiler/temp
 77
 
-python client.py -V 3 -p 3625476689 set settings/boiler/temp 78
+python client.py -s 765432 -p 3625476689 set settings/boiler/temp 78
 OK
 
 </pre>
-
-## Server
-
-<pre>
-   usage: server.py [-h] [-s] [-H HOST] [-p PASSWORD] [-n]
-
-   optional arguments:
-     -h, --help            show this help message and exit
-     -H HOST, --host HOST  default is 0.0.0.0
-     -p PASSWORD, --password PASSWORD
-</pre>
-
-*The test server doesn't really work anymore...*
 
 
 ## Pycrypto library
 
 install with
 
-   pip install pycrypto
+    pip install pycrypto
 
 pyCryptoDome doesn't work
