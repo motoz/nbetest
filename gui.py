@@ -20,21 +20,24 @@ class simpleapp_tk(Tkinter.Tk):
         self.addressVariable = Tkinter.StringVar()
         self.passwordVariable = Tkinter.StringVar()
         self.serialVariable = Tkinter.StringVar()
-        self.serialVariable.set('sdf')
+        self.serialVariable.set('123')
         self.initialize()
-        self.get_proxy()
+        #self.get_proxy()
 
     def get_proxy(self, event=None):
         try:
             pw = self.passwordVariable.get()
             address = self.addressVariable.get()
+            serial = str(int(self.serialVariable.get()))
             if  address in ('<discover>', ''):
-                self.proxy = Proxy.discover(pw, PORT)
+                self.proxy = Proxy.discover(pw, PORT, serial)
+                self.addressVariable.set(self.proxy.addr[0])
             else:
-                self.proxy = Proxy(pw, PORT, address,)
+                self.proxy = Proxy(pw, PORT, address, serial)
+            print self.proxy, 'asdf'
             self.serialVariable.set(self.proxy.serial)
         except Exception as e:
-            #print e
+            print e
             self.serialVariable.set('-')
 
     def initialize(self):
@@ -53,21 +56,23 @@ class simpleapp_tk(Tkinter.Tk):
         self.password.grid(row = 0, column = 3, sticky = 'EW')
         self.passwordVariable.set(u"123456789")
 
+        self.password = Tkinter.Entry(self,textvariable=self.serialVariable)
+        label = Tkinter.Label(self, text='serial:')
+        label.grid(row = 0, column = 3, sticky = 'E')
+        self.password.grid(row = 0, column = 4, sticky = 'EW')
+        self.serialVariable.set(u"000")
+
         self.entryVariable = Tkinter.StringVar()
         self.entry = Tkinter.Entry(self,textvariable=self.entryVariable)
         self.entry.grid(column=0,row=1,sticky='ENSW', columnspan=3)
         self.entry.bind("<Return>", self.OnPressEnter)
         self.entryVariable.set(u"get")
-
-        Tkinter.Label(self, text='serial:').grid(row = 0, column = 4, sticky = 'E')
-        self.serial = Tkinter.Label(self, textvariable=self.serialVariable).grid(row = 0, column = 5, sticky = 'W')
-
-
+        
         button = Tkinter.Button(self, text=u"Run command", command=self.OnButtonClick)
         button.grid(column=3, row=1, sticky = 'W')
 
-        #self.secnumbutton = Tkinter.Checkbutton(self, text="seqnums", variable=self.seqnums, command=self.OnSecnumClick)
-        #self.secnumbutton.grid(column=4, row=1, sticky='E')
+        button = Tkinter.Button(self, text=u"Connect", command=self.OnConnect)
+        button.grid(column=4, row=1, sticky = 'W')
 
         self.text = Tkinter.Text(self)
         self.text.grid(column=0, row=2, columnspan=8, sticky='EWNS')
@@ -85,6 +90,10 @@ class simpleapp_tk(Tkinter.Tk):
 
     def OnButtonClick(self):
         self.OnPressEnter(None)
+
+    def OnConnect(self):
+        #self.addressVariable.set(u"<discover>")
+        self.get_proxy()
 
     def OnPressEnter(self,event):
         d = self.entryVariable.get().split(' ')
