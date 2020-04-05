@@ -1,11 +1,12 @@
-#Test program for the NBE pellet burner UDP protocol
-A client that can connect to a scotte V7/V13 controller, and a test server that simulates a controller box.
+# Test program for the NBE pellet burner UDP protocol
 
-##Client
+A client that can connect to a scotte V7/V13 controller (and apparently also aduro pellet hybrid stoves), and a test server that simulates a controller box.
+
+## Client
 
 <pre>
     python client.py -h
-    usage: client.py [-h] [-v] [-a ADDRESS] [-p PASSWORD] [-V VERSION]
+    usage: client.py [-h] [-v] [-a ADDRESS] [-p PASSWORD]
                      {raw,set,get} ...
 
     positional arguments:
@@ -20,8 +21,6 @@ A client that can connect to a scotte V7/V13 controller, and a test server that 
       -a ADDRESS, --address ADDRESS
                             controller address, autodiscovered if omitted
       -p PASSWORD, --password PASSWORD
-      -V VERSION, --version VERSION
-                            protocol version= 1,2,3...
 
 examples:
 
@@ -66,7 +65,7 @@ OK
 
 </pre>
 
-##Server
+## Server
 
 <pre>
    usage: server.py [-h] [-s] [-H HOST] [-p PASSWORD] [-n]
@@ -77,3 +76,13 @@ OK
      -p PASSWORD, --password PASSWORD
 </pre>
 
+*The test server doesn't really work anymore...*
+
+
+## Pycrypto library
+
+install with
+
+   pip install pycrypto
+
+pyCryptoDome doesn't work
