@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+from __future__ import print_function
 import socket
 from random import randrange
 import time
@@ -42,7 +42,7 @@ class Proxy:
                 break
             except socket.error:
                 if p==9999:
-                    print 'No free port found'
+                    print ('No free port found')
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         if addr == '<broadcast>':
             s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -85,7 +85,7 @@ class Proxy:
 
     def get(self, d=None):
         d = d.rstrip('/').split('/')
-        if d[0] is None or d[0] is '*':
+        if d[0] == None or d[0] == '*':
             return [p + '/' for p in self.root]
         elif d[0] == 'settings':
             if len(d) == 1:
@@ -147,7 +147,7 @@ class Proxy:
 
     def set(self, path=None, value=None):
         d = path.rstrip('/').split('/')
-        if d[0] is None or d[0] is '*':
+        if d[0] == None or d[0] == '*':
             return ('settings',)
         elif len(d) == 3 and d[1] in self.settings and value is not None :
             self.s.settimeout(5)

@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+from __future__ import print_function
 import time
 import random
 from random import SystemRandom
@@ -75,7 +75,7 @@ class Request_frame(object):
                 h += self.payload
             h += END;
             if self.encrypted: 
-                pad = ''.join([chr(SystemRandom().randrange(128)) for x in range(64-len(h))])
+                pad = b''.join([bytes(chr(SystemRandom().randrange(128)), 'utf-8') for x in range(64-len(h))])
                 h+=pad
                 if hasattr(self, 'xtea_key'):
                     #print ('xtea encrypt 2')
@@ -87,7 +87,7 @@ class Request_frame(object):
             self.framedata += h
             if success:
                 return self.framedata
-            print 'ERROR chipertext wrong length', len(h)
+            print ('ERROR chipertext wrong length', len(h))
 
     def decode(self, record):
         i = 0
@@ -151,6 +151,7 @@ class Response_frame(object):
         i+=12
         self.controllerid = record[i:i+6]
         i+=6
+        #import pdb;pdb.set_trace()i
         if not record[i] == START[0]:
             raise IOError
         if len(record) < self.RESPONSE_HEADER_SIZE:
