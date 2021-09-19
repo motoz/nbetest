@@ -72,14 +72,15 @@ if __name__ == '__main__':
     parser_c.set_defaults(func=getfunc)
 
     args = argparser.parse_args()
-
-    if args.address is None:
-        with Proxy.discover(args.password, PORT, args.serial) as proxy:
-            args.func(args, proxy)
-    else:
-        with Proxy(args.password, PORT, args.address, args.serial) as proxy:
-            args.func(args, proxy)
-
+    try:
+      if args.address is None:
+          with Proxy.discover(args.password, PORT, args.serial) as proxy:
+              args.func(args, proxy)
+      else:
+          with Proxy(args.password, PORT, args.address, args.serial) as proxy:
+              args.func(args, proxy)
+    except AttributeError:
+      print ("too few arguments")
 
 
 

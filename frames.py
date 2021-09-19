@@ -161,7 +161,7 @@ class Response_frame(object):
         i += 2
         self.sequencenumber = int(record[i:i+2])
         if self.sequencenumber != self.request.sequencenumber:
-            #print self.sequencenumber, self.request.sequencenumber
+        #    print (self.sequencenumber, self.request.sequencenumber)
             raise IOError
         i += 2
         self.status = int(record[i:i+1])
@@ -170,9 +170,9 @@ class Response_frame(object):
         i += 3
         if not len(record) == self.size + self.RESPONSE_HEADER_SIZE:
             raise IOError
-        #print record[i:i+self.size]
+        #print (record[i:i+self.size])
         self.payload = (record[i:i+self.size]).decode('ascii')
-        #print self.payload
+        #print (self.payload)
         i += self.size
         if not record[i] == END[0]:
             raise IOError
