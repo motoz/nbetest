@@ -8,7 +8,7 @@ A client that can connect to a scotte V7/V13 controller (and apparently also adu
 python mqtt-bridge.py -d
 </pre>
 
-Configuration lies in config.json, just modify for your needs, edit and copy pellet.service to /etc/systemd/system and start daemon
+Configuration lies in config.json, just modify to suit your needs also edit and copy pellet.service to /etc/systemd/system and start daemon
 ```
 systemctl enable pellet&& systemctl start pellet
 ```
@@ -21,7 +21,7 @@ sensor: !include pellet-burner.yaml
 ```
 You will have to restart Home Assistant.
 
-[](/pics/pellet_burner_ha_info_pic.png)
+<img src="https://github.com/e1z0/nbetest/raw/master/pics/pellet_burner_ha_info_pic.png" width=40% height=40%>
 
 
 ## Client
