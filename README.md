@@ -15,7 +15,7 @@ systemctl enable pellet&& systemctl start pellet
 
 ## Home Assistant Integration
 
-Just copy ![pellet-burner.yaml](/pellet-burner.yaml) to your home assistant config directory and include in the main configuration.yaml file.
+Just copy [pellet-burner.yaml](/pellet-burner.yaml) to your home assistant config directory and include in the main configuration.yaml file.
 ```
 sensor: !include pellet-burner.yaml
 ```
