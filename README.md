@@ -1,6 +1,28 @@
-# Test program for the NBE pellet burner UDP protocol
+# Test program and mqtt bridge for the NBE pellet burner UDP protocol
 
 A client that can connect to a scotte V7/V13 controller (and apparently also aduro pellet hybrid stoves), and a test server that simulates a controller box.
+
+## MQTT Bridge
+
+<pre>
+python mqtt-bridge.py -d
+</pre>
+
+Configuration lies in config.json, just modify for your needs, edit and copy pellet.service to /etc/systemd/system and start daemon
+```
+systemctl enable pellet&& systemctl start pellet
+```
+
+## Home Assistant Integration
+
+Just copy ![pellet-burner.yaml](/pellet-burner.yaml) to your home assistant config directory and include in the main configuration.yaml file.
+```
+sensor: !include pellet-burner.yaml
+```
+You will have to restart Home Assistant.
+
+[](/pics/pellet_burner_ha_info_pic.png)
+
 
 ## Client
 
