@@ -1,0 +1,27 @@
+version: '2.4'
+services:
+    nbetest:
+        container_name: nbetest
+        build:
+          context: .
+          dockerfile: Dockerfile
+        hostname: nbetest
+        restart: unless-stopped
+        environment:
+           NBE_SERIAL: "xxxx"
+           NBE_IP: "xxxxx"
+           NBE_PORT: "8483"
+           MQTT_IP: "192.168.1.x"
+           MQTT_PORT: "1883"
+           MQTT_PREFIX: "bellet_burner"
+           MQTT_CLIENT_NAME: "pellet-burner"
+           REFRESH_RATE: 5
+        cap_add:
+          - SYS_RESOURCE
+        networks: 
+            - docker_intern
+
+
+networks:
+    docker_intern:
+      external: true

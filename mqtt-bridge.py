@@ -20,7 +20,8 @@
 from __future__ import print_function
 from argparse import ArgumentParser
 from protocol import Proxy
-import simplejson as json
+#import simplejson as json
+import json
 import os
 import paho.mqtt.client as paho
 import time
@@ -34,13 +35,22 @@ def mqtt_topic(config,topic,val):
 
 def query_boiler(config):
     print ("Making query to the pellet burner...")
-    with Proxy.discover(PASSWORD, config["nbe_port"], config["nbe_serial"]) as proxy:
-        for query in config["options"]:
-          response = proxy.get(query)
-          for item in response:
-             val = item.split("=",1)
-             #for debug purposes #print ("Key: %s => val: %s" % (val[0],val[1]))
-             mqtt_topic(config,val[0],val[1])
+    if config["nbe_ip"] is None:
+        with Proxy.discover(PASSWORD, config["nbe_port"], config["nbe_serial"]) as proxy:
+           for query in config["options"]:
+             response = proxy.get(query)
+             for item in response:
+                val = item.split("=",1)
+                #for debug purposes #print ("Key: %s => val: %s" % (val[0],val[1]))
+                mqtt_topic(config,val[0],val[1])
+    else:
+        with Proxy(PASSWORD, config["nbe_port"], config["nbe_ip"], config["nbe_serial"]) as proxy:
+           for query in config["options"]:
+             response = proxy.get(query)
+             for item in response:
+                val = item.split("=",1)
+                #for debug purposes #print ("Key: %s => val: %s" % (val[0],val[1]))
+                mqtt_topic(config,val[0],val[1])
 
 def help():
     print ("Just a simple mqtt bridge that publishes pellet burner info data to mqtt")
