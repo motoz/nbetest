@@ -2,6 +2,7 @@
 
 A client that can connect to a scotte V7/V13 controller (and apparently also aduro pellet hybrid stoves), and a test server that simulates a controller box.
 
+
 ## MQTT Bridge
 
 <pre>
@@ -11,6 +12,12 @@ python mqtt-bridge.py -d
 Configuration lies in config.json, just modify to suit your needs also edit and copy pellet.service to /etc/systemd/system and start daemon
 ```
 systemctl enable pellet&& systemctl start pellet
+```
+
+## MQTT Bridge using docker
+
+```
+make up (edit docker-compose.yml before)
 ```
 
 ## Home Assistant Integration

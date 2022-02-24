@@ -2,9 +2,7 @@ version: '2.4'
 services:
     nbetest:
         container_name: nbetest
-        build:
-          context: .
-          dockerfile: Dockerfile
+        image: nulldevil/nbetest:latest
         hostname: nbetest
         restart: unless-stopped
         environment:
