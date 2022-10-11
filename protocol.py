@@ -25,6 +25,7 @@ import base64
 from frames import Request_frame, Response_frame
 from os import urandom
 from random import SystemRandom, randrange
+import select
 #import xtea
 
 class Proxy:
@@ -57,6 +58,7 @@ class Proxy:
             request.controllerid = serialnumber
         request.sequencenumber = randrange(0,100)
         self.s.sendto(request.encode() , (addr, port))
+        self.s.settimeout(5.0)
         data, server = self.s.recvfrom(4096)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
         self.addr = server
@@ -72,6 +74,7 @@ class Proxy:
         request.function = 1
         request.sequencenumber += 1
         self.s.sendto(request.encode() , self.addr)
+        self.s.settimeout(5.0)
         data, server = self.s.recvfrom(4096)
         self.response.decode(data)
         try:
@@ -172,9 +175,13 @@ class Proxy:
         self.request.encrypted = encrypt
         self.request.pincode = self.password
         self.s.sendto(self.request.encode(), self.addr)
-        data, server = self.s.recvfrom(4096)
-        self.response.decode(data)
-        return self.response
+        # needs to implement poll wait
+        self.s.settimeout(5.0)
+        ready = select.select([self.s], [], [], 5)
+        if ready[0]:
+          data, server = self.s.recvfrom(4096)
+          self.response.decode(data)
+          return self.response
 
     def __enter__(self):
         return self

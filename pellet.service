@@ -1,0 +1,17 @@
+[Unit]
+Description=Pellet burner MQTT bridge
+After=network.target auditd.service ssh.service
+
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/nbetest
+ExecStart=/usr/bin/python3 /root/nbetest/mqtt-bridge.py -d
+Restart=always
+RestartSec=10
+KillMode=process
+
+
+[Install]
+WantedBy=multi-user.target

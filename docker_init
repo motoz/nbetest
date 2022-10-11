@@ -1,0 +1,23 @@
+#!/bin/bash
+
+
+echo "Configuring..."
+
+echo "{" > /app/config.json
+echo "\"nbe_serial\": \"${NBE_SERIAL}\"," >> /app/config.json
+echo "\"nbe_ip\": \"${NBE_IP}\"," >> /app/config.json
+echo "\"nbe_port\": ${NBE_PORT}," >> /app/config.json
+echo "\"mqtt_server\": \"${MQTT_IP}\"," >> /app/config.json
+echo "\"mqtt_port\": ${MQTT_PORT}," >> /app/config.json
+echo "\"mqtt_prefix\": \"${MQTT_PREFIX}\"," >> /app/config.json
+echo "\"mqtt_client_name\": \"${MQTT_CLIENT_NAME}\"," >> /app/config.json
+echo "\"refresh_rate\": ${REFRESH_RATE}," >> /app/config.json
+echo "\"options\": [ \"operating_data\", \"settings/boiler\" ]" >> /app/config.json
+echo "}" >> /app/config.json
+
+echo "Config done."
+cat /app/config.json
+
+echo "Starting..."
+cd /app
+python3 /app/mqtt-bridge.py -d

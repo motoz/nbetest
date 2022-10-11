@@ -1,0 +1,88 @@
+  - platform: mqtt
+    state_topic: "pellet_burner/settings/boiler/temp"
+    name: "Pellet burner max temperature"
+    unique_id: "pellet_burner_max_temp"
+    state_class: measurement
+    device_class: temperature
+    unit_of_measurement: °C
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/boiler_temp"
+    name: "Pellet burner current temperature"
+    unique_id: "pellet_burner_current_temp"
+    state_class: measurement
+    device_class: temperature
+    unit_of_measurement: °C
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/external_temp"
+    name: "Pellet burner external temperature"
+    unique_id: "pellet_burner_ext_temp"
+    state_class: measurement
+    device_class: temperature
+    unit_of_measurement: °C
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/cloud_level"
+    name: "Pellet burner external clouds"
+    unique_id: "pellet_burner_ext_clouds"
+    state_class: measurement
+    unit_of_measurement: '%'
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/power_kw"
+    name: "Pellet burner power kwh"
+    unique_id: "pellet_burner_power_kwh"
+    state_class: measurement
+    device_class: power
+    unit_of_measurement: 'kW'
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/power_pct"
+    name: "Pellet burner power percent"
+    unique_id: "pellet_burner_power_percent"
+    state_class: measurement
+    device_class: power_factor
+    unit_of_measurement: '%'
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/oxygen"
+    name: "Pellet burner oxygen percent"
+    unique_id: "pellet_burner_oxygen_percent"
+    state_class: measurement
+    device_class: power_factor
+    unit_of_measurement: '%'
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/oxygen_ref"
+    name: "Pellet burner oxygen ref percent"
+    unique_id: "pellet_burner_oxygen_ref_percent"
+    state_class: measurement
+    device_class: power_factor
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/photo_level"
+    name: "Pellet burner photo sensor"
+    unique_id: "pellet_burner_photo_sensor"
+    state_class: measurement
+    device_class: illuminance
+    unit_of_measurement: 'lm'
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/forward_ref"
+    name: "Pellet burner zone1 wanted"
+    unique_id: "pellet_burner_zone1_wanted"
+    state_class: measurement
+    device_class: temperature
+    unit_of_measurement: °C
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/forward_temp"
+    name: "Pellet burner zone1 actual flow"
+    unique_id: "pellet_burner_zone1_actual_flow"
+    state_class: measurement
+    device_class: temperature
+    unit_of_measurement: °C
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/house_valve_state"
+    name: "Pellet burner zone1 valve position"
+    unique_id: "pellet_burner_zone1_valve_position"
+    state_class: measurement
+    device_class: power_factor
+    unit_of_measurement: '%'
+  - platform: mqtt
+    state_topic: "pellet_burner/operating_data/content"
+    name: "Pellet burner total burned"
+    unique_id: "pellet_burner_total_burned"
+    state_class: measurement
+    unit_of_measurement: 'kg'

@@ -1,0 +1,11 @@
+{
+"nbe_serial": "55116",
+"nbe_ip": "192.168.13.106",
+"nbe_port": 8483,
+"mqtt_server": "192.168.13.1",
+"mqtt_port": 1883,
+"mqtt_prefix": "pellet_burner",
+"mqtt_client_name": "pellet-burner",
+"refresh_rate": 60,
+"options": [ "operating_data", "settings/boiler" ]
+}
